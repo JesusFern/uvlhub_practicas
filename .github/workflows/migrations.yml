@@ -95,9 +95,9 @@ jobs:
         # Añadir los archivos de migración generados
         git add migrations/versions/*.py
 
-        # Realizar el commit de los archivos de migración
+        # Verificar si hay archivos para hacer commit
         if [[ $(git diff --cached --quiet) -ne 0 ]]; then
-
+          # Si hay cambios, hacer commit
           git commit -m "Migration: Add new migration"
 
           # Verificar si el flujo se ejecuta en un PR o en una rama
@@ -107,6 +107,7 @@ jobs:
           else
             # Si es un push a una rama, hacer push a la misma rama
             git push origin ${{ github.ref }}
+          fi
         else
           echo "No changes to commit"
         fi
