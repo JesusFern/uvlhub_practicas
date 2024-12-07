@@ -96,7 +96,7 @@ jobs:
         git add migrations/versions/*.py
 
         # Realizar el commit de los archivos de migración
-        git commit -m "Add new migration"
+        git commit -m "Migration: Add new migration"
 
         # Verificar si el flujo se ejecuta en un PR o en una rama
         if [ "${{ github.event_name }}" == "pull_request" ]; then
