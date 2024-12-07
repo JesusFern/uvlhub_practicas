@@ -3,6 +3,8 @@ name: Run Migrations
 on:
   push:
     branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
 
 jobs:
   migrations:
@@ -43,7 +45,7 @@ jobs:
           sleep 5
         done
 
-    - name: Execute MySQL Commands
+   - name: Execute MySQL Commands
       run: |
         # Eliminar bases de datos y usuario si existen
         mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "
@@ -78,11 +80,13 @@ jobs:
         WORKING_DIR: ""
         DATABASE_URL: mysql+pymysql://uvlhubdb_user:uvlhubdb_password@127.0.0.1:3306/uvlhubdb_test
       run: |
-        flask db upgrade  # Applies the migrations
-        flask db migrate -m "new_migration"  # Creates new migrations
-        flask db upgrade  # Applies any new migrations after migration generation
+        flask db upgrade
+        flask db migrate -m "new_migration"
+        flask db upgrade
 
-      - name: Commit migration file
+    - name: Commit migration file
+      if: |
+        github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
       run: |
         # Configurar usuario de Git para hacer commit con el token de GitHub
         git config --global user.name "GitHub Actions"
