@@ -14,10 +14,10 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ROOT_PASSWORD: uvlhub_root_password
+          MYSQL_ROOT_PASSWORD: uvlhubdb_root_password
           MYSQL_DATABASE: uvlhubdb_test
-          MYSQL_USER: uvlhub_user
-          MYSQL_PASSWORD: uvlhub_password
+          MYSQL_USER: uvlhubdb_user
+          MYSQL_PASSWORD: uvlhubdb_password
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping -h 127.0.0.1 --silent" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -40,20 +40,37 @@ jobs:
 
     - name: Wait for MySQL
       run: |
-        until mysqladmin ping -h 127.0.0.1 -uuvlhub_user -puvlhub_password --silent; do
+        until mysqladmin ping -h 127.0.0.1 -uuvlhubdb_user -puvlhubdb_password --silent; do
           echo "Waiting for MySQL..."
           sleep 5
         done
 
+    - name: Grant Permissions to MySQL User
+      run: |
+        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "
+        GRANT ALL PRIVILEGES ON uvlhubdb_test.* TO 'uvlhubdb_user'@'%';
+        FLUSH PRIVILEGES;"
+
+    - name: Debug MySQL Setup
+      run: |
+        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "
+        SHOW DATABASES;
+        SELECT user, host FROM mysql.user;"
+
     - name: Run Flask Migrations
       env:
-        FLASK_ENV: production
+        FLASK_APP_NAME: "UVLHUB.IO(dev)"
+        FLASK_ENV: development
+        DOMAIN: localhost
         MARIADB_HOSTNAME: 127.0.0.1
         MARIADB_PORT: 3306
+        MARIADB_DATABASE: uvlhubdb
         MARIADB_TEST_DATABASE: uvlhubdb_test
-        MARIADB_USER: uvlhub_user
-        MARIADB_PASSWORD: uvlhub_password
-        DATABASE_URL: mysql+pymysql://uvlhub_user:uvlhub_password@127.0.0.1:3306/uvlhubdb_test
+        MARIADB_USER: uvlhubdb_user
+        MARIADB_PASSWORD: uvlhubdb_password
+        MARIADB_ROOT_PASSWORD: uvlhubdb_root_password
+        WORKING_DIR: /app/
+        DATABASE_URL: mysql+pymysql://uvlhubdb_user:uvlhubdb_password@127.0.0.1:3306/uvlhubdb_test
       run: |
         flask db migrate -m "new_migration"
         flask db upgrade
