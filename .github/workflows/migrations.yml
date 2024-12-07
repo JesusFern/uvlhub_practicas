@@ -47,10 +47,11 @@ jobs:
 
     - name: Execute MySQL Commands
       run: |
+        # Eliminar bases de datos y usuario si existen
         mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "
         DROP DATABASE IF EXISTS uvlhubdb;
         DROP DATABASE IF EXISTS uvlhubdb_test;
-        DROP USER IF EXISTS 'uvlhubdb_user'@'localhost';
+        DROP USER IF EXISTS 'uvlhubdb_user'@'%';
         CREATE DATABASE uvlhubdb;
         CREATE DATABASE uvlhubdb_test;
         CREATE USER 'uvlhubdb_user'@'%' IDENTIFIED BY 'uvlhubdb_password';
