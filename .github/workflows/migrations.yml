@@ -45,19 +45,19 @@ jobs:
           sleep 5
         done
 
-   - name: Execute MySQL Commands
+    - name: Execute MySQL Commands
       run: |
         # Eliminar bases de datos y usuario si existen
-        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "
+        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e '
         DROP DATABASE IF EXISTS uvlhubdb;
         DROP DATABASE IF EXISTS uvlhubdb_test;
-        DROP USER IF EXISTS 'uvlhubdb_user'@'%';
+        DROP USER IF EXISTS "uvlhubdb_user"@"%";
         CREATE DATABASE uvlhubdb;
         CREATE DATABASE uvlhubdb_test;
-        CREATE USER 'uvlhubdb_user'@'%' IDENTIFIED BY 'uvlhubdb_password';
-        GRANT ALL PRIVILEGES ON uvlhubdb.* TO 'uvlhubdb_user'@'%';
-        GRANT ALL PRIVILEGES ON uvlhubdb_test.* TO 'uvlhubdb_user'@'%';
-        FLUSH PRIVILEGES;"
+        CREATE USER "uvlhubdb_user"@"%" IDENTIFIED BY "uvlhubdb_password";
+        GRANT ALL PRIVILEGES ON uvlhubdb.* TO "uvlhubdb_user"@"%";
+        GRANT ALL PRIVILEGES ON uvlhubdb_test.* TO "uvlhubdb_user"@"%";
+        FLUSH PRIVILEGES;'
 
     - name: Debug MySQL Setup
       run: |
