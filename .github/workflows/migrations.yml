@@ -83,3 +83,20 @@ jobs:
         flask db upgrade  # Applies the migrations
         flask db migrate -m "new_migration"  # Creates new migrations
         flask db upgrade  # Applies any new migrations after migration generation
+
+    - name: Commit migration file
+      run: |
+        # Configurar usuario de Git para hacer commit con el token de GitHub
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Añadir los archivos de migración generados
+        git add migrations/versions/*.py
+
+        # Realizar el commit de los archivos de migración
+        git commit -m "Add new migration"
+
+        # Hacer push de los cambios al repositorio utilizando el GITHUB_TOKEN
+        git push origin $GITHUB_REF
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
