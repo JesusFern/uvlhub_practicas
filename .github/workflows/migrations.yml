@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 jobs:
-  migrations:
+  migrate:
     runs-on: ubuntu-latest
 
     services:
@@ -15,17 +15,19 @@ jobs:
         image: mysql:5.7
         env:
           MYSQL_ROOT_PASSWORD: uvlhubdb_root_password
-          MYSQL_DATABASE: uvlhubdb_test
+          MYSQL_DATABASE: uvlhubdb
           MYSQL_USER: uvlhubdb_user
           MYSQL_PASSWORD: uvlhubdb_password
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping -h 127.0.0.1 --silent" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
 
@@ -38,38 +40,43 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Wait for MySQL
-      run: |
-        until mysqladmin ping -h 127.0.0.1 -uuvlhubdb_user -puvlhubdb_password --silent; do
-          echo "Waiting for MySQL..."
-          sleep 5
-        done
-
     - name: Grant Permissions to MySQL User
       run: |
         mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "
+        CREATE DATABASE IF NOT EXISTS uvlhubdb;
+        GRANT ALL PRIVILEGES ON uvlhubdb.* TO 'uvlhubdb_user'@'%';
+        CREATE DATABASE IF NOT EXISTS uvlhubdb_test;
         GRANT ALL PRIVILEGES ON uvlhubdb_test.* TO 'uvlhubdb_user'@'%';
         FLUSH PRIVILEGES;"
 
-    - name: Debug MySQL Setup
+    - name: Debug MySQL Databases and Users
       run: |
-        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "
-        SHOW DATABASES;
-        SELECT user, host FROM mysql.user;"
+        echo "Available Databases:"
+        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "SHOW DATABASES;"
+        echo "Users and Hosts:"
+        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "SELECT user, host FROM mysql.user;"
+        echo "Permissions for uvlhubdb_user:"
+        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "SHOW GRANTS FOR 'uvlhubdb_user'@'%';"
 
-    - name: Run Flask Migrations
+    - name: Wait for MySQL to be Ready
+      run: |
+        for i in {1..10}; do
+          if mysqladmin ping -h127.0.0.1 -uroot -puvlhubdb_root_password --silent; then
+            echo "MySQL is up and running!"
+            break
+          fi
+          echo "Waiting for MySQL to start..."
+          sleep 5
+        done
+
+    - name: Run Migrations
       env:
-        FLASK_APP_NAME: "UVLHUB.IO(dev)"
         FLASK_ENV: development
-        DOMAIN: localhost
         MARIADB_HOSTNAME: 127.0.0.1
         MARIADB_PORT: 3306
         MARIADB_DATABASE: uvlhubdb
-        MARIADB_TEST_DATABASE: uvlhubdb_test
         MARIADB_USER: uvlhubdb_user
         MARIADB_PASSWORD: uvlhubdb_password
         MARIADB_ROOT_PASSWORD: uvlhubdb_root_password
-        DATABASE_URL: mysql+pymysql://uvlhubdb_user:uvlhubdb_password@127.0.0.1:3306/uvlhubdb_test
       run: |
-        flask db migrate -m "new_migration"
         flask db upgrade
