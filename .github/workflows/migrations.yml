@@ -28,12 +28,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Set environment variables
+      - name: Run Flask Migrations
         env:
           FLASK_ENV: production
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run Flask Migrations
         run: |
           flask db migrate -m "new_migration"
           flask db upgrade
