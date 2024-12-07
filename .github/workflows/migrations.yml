@@ -96,15 +96,19 @@ jobs:
         git add migrations/versions/*.py
 
         # Realizar el commit de los archivos de migración
-        git commit -m "Migration: Add new migration"
+        if [[ $(git diff --cached --quiet) -ne 0 ]]; then
 
-        # Verificar si el flujo se ejecuta en un PR o en una rama
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
-          # Si es un PR, hacer push a la rama base del PR
-          git push origin ${{ github.base_ref }}
+          git commit -m "Migration: Add new migration"
+
+          # Verificar si el flujo se ejecuta en un PR o en una rama
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # Si es un PR, hacer push a la rama base del PR
+            git push origin ${{ github.base_ref }}
+          else
+            # Si es un push a una rama, hacer push a la misma rama
+            git push origin ${{ github.ref }}
         else
-          # Si es un push a una rama, hacer push a la misma rama
-          git push origin ${{ github.ref }}
+          echo "No changes to commit"
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
