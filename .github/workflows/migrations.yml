@@ -96,9 +96,12 @@ jobs:
         git add migrations/versions/*.py
 
         # Verificar si hay archivos para hacer commit
-        if [[ $(git diff --cached --quiet) -ne 0 ]]; then
+        git diff --cached --quiet --exit-code
+        if [[ $? -eq 0 ]]; then
+          echo "No changes to commit"
+        else
           # Si hay cambios, hacer commit
-          git commit -m "Migration: Add new migration"
+          git commit -m "Migrations: Add new migration"
 
           # Verificar si el flujo se ejecuta en un PR o en una rama
           if [ "${{ github.event_name }}" == "pull_request" ]; then
@@ -108,8 +111,6 @@ jobs:
             # Si es un push a una rama, hacer push a la misma rama
             git push origin ${{ github.ref }}
           fi
-        else
-          echo "No changes to commit"
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
