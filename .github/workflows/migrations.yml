@@ -45,14 +45,17 @@ jobs:
           sleep 5
         done
 
-    - name: Ensure MySQL Database Exists
-      run: |
-        mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "CREATE DATABASE IF NOT EXISTS uvlhubdb_test;"
-
-    - name: Grant Permissions to MySQL User
+    - name: Execute MySQL Commands
       run: |
         mysql -h127.0.0.1 -uroot -puvlhubdb_root_password -e "
-        GRANT ALL PRIVILEGES ON uvlhubdb_test.* TO 'uvlhubdb_user'@'%' IDENTIFIED BY 'uvlhubdb_password';
+        DROP DATABASE IF EXISTS uvlhubdb;
+        DROP DATABASE IF EXISTS uvlhubdb_test;
+        DROP USER IF EXISTS 'uvlhubdb_user'@'localhost';
+        CREATE DATABASE uvlhubdb;
+        CREATE DATABASE uvlhubdb_test;
+        CREATE USER 'uvlhubdb_user'@'localhost' IDENTIFIED BY 'uvlhubdb_password';
+        GRANT ALL PRIVILEGES ON uvlhubdb.* TO 'uvlhubdb_user'@'localhost';
+        GRANT ALL PRIVILEGES ON uvlhubdb_test.* TO 'uvlhubdb_user'@'localhost';
         FLUSH PRIVILEGES;"
 
     - name: Debug MySQL Setup
