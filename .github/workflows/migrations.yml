@@ -3,8 +3,6 @@ name: Run Migrations
 on:
   push:
     branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
 
 jobs:
   migrations:
@@ -84,7 +82,7 @@ jobs:
         flask db migrate -m "new_migration"  # Creates new migrations
         flask db upgrade  # Applies any new migrations after migration generation
 
-    - name: Commit migration file
+      - name: Commit migration file
       run: |
         # Configurar usuario de Git para hacer commit con el token de GitHub
         git config --global user.name "GitHub Actions"
@@ -96,7 +94,13 @@ jobs:
         # Realizar el commit de los archivos de migración
         git commit -m "Add new migration"
 
-        # Hacer push de los cambios al repositorio utilizando el GITHUB_TOKEN
-        git push origin $GITHUB_REF
+        # Verificar si el flujo se ejecuta en un PR o en una rama
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          # Si es un PR, hacer push a la rama base del PR
+          git push origin ${{ github.base_ref }}
+        else
+          # Si es un push a una rama, hacer push a la misma rama
+          git push origin ${{ github.ref }}
+        fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
