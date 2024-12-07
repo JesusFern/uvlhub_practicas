@@ -53,9 +53,9 @@ jobs:
         DROP USER IF EXISTS 'uvlhubdb_user'@'localhost';
         CREATE DATABASE uvlhubdb;
         CREATE DATABASE uvlhubdb_test;
-        CREATE USER 'uvlhubdb_user'@'localhost' IDENTIFIED BY 'uvlhubdb_password';
-        GRANT ALL PRIVILEGES ON uvlhubdb.* TO 'uvlhubdb_user'@'localhost';
-        GRANT ALL PRIVILEGES ON uvlhubdb_test.* TO 'uvlhubdb_user'@'localhost';
+        CREATE USER 'uvlhubdb_user'@'%' IDENTIFIED BY 'uvlhubdb_password';
+        GRANT ALL PRIVILEGES ON uvlhubdb.* TO 'uvlhubdb_user'@'%';
+        GRANT ALL PRIVILEGES ON uvlhubdb_test.* TO 'uvlhubdb_user'@'%';
         FLUSH PRIVILEGES;"
 
     - name: Debug MySQL Setup
@@ -77,6 +77,7 @@ jobs:
         MARIADB_PASSWORD: uvlhubdb_password
         MARIADB_ROOT_PASSWORD: uvlhubdb_root_password
         WORKING_DIR: ""
+        DATABASE_URL: mysql+pymysql://uvlhubdb_user:uvlhubdb_password@127.0.0.1:3306/uvlhubdb_test
       run: |
         flask db upgrade  # Applies the migrations
         flask db migrate -m "new_migration"  # Creates new migrations
