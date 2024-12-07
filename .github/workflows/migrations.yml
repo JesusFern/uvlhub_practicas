@@ -79,4 +79,5 @@ jobs:
         MARIADB_PASSWORD: uvlhubdb_password
         MARIADB_ROOT_PASSWORD: uvlhubdb_root_password
       run: |
+        flask db migrate -m "new_migration"
         flask db upgrade
