@@ -69,7 +69,7 @@ jobs:
         MARIADB_USER: uvlhubdb_user
         MARIADB_PASSWORD: uvlhubdb_password
         MARIADB_ROOT_PASSWORD: uvlhubdb_root_password
-        WORKING_DIR: /app/
+        WORKING_DIR: app/
         DATABASE_URL: mysql+pymysql://uvlhubdb_user:uvlhubdb_password@127.0.0.1:3306/uvlhubdb_test
       run: |
         flask db migrate -m "new_migration"
