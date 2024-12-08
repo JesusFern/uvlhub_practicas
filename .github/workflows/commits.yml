@@ -24,10 +24,10 @@ jobs:
               continue  # Saltar la validación si es un commit de fusión
             fi
 
-            # Validar el mensaje según los tipos definidos
-            if [[ ! "$message" =~ ^(Feat|Fix|Test|Config|Docs|Migrations):[[:space:]]+[A-Z] ]]; then
+            # Validar el mensaje según los tipos definidos (sin exigir mayúscula en el título)
+            if [[ ! "$message" =~ ^(Feat|Fix|Test|Config|Docs|Migrations):[[:space:]]+ ]]; then
               echo "❌ Invalid commit message: $message"
-              echo "Expected format: 'Type: Title' where Type is one of [Feat, Fix, Test, Config, Docs, Migrations] and Title starts with an uppercase letter."
+              echo "Expected format: 'Type: Title' where Type is one of [Feat, Fix, Test, Config, Docs, Migrations]."
               exit 1
             fi
           done
