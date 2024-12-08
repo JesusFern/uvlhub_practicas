@@ -26,7 +26,7 @@ jobs:
 
             # Validar el mensaje según los tipos definidos (sin exigir mayúscula en el título)
             if [[ ! "$message" =~ ^(Feat|Fix|Test|Config|Docs|Migrations):[[:space:]]+ ]]; then
-              echo "❌ Invalid commit message: $message"
+              echo "Invalid commit message: $message"
               echo "Expected format: 'Type: Title' where Type is one of [Feat, Fix, Test, Config, Docs, Migrations]."
               exit 1
             fi
