@@ -2,9 +2,9 @@ name: Release on Push to Develop
 
 on:
   schedule:
-    - cron: '18 18 * * *'  # 16:06 UTC (17:06 España)
-    - cron: '22 18 * * *'  # 16:08 UTC (17:08 España)
-    - cron: '30 19 * * *' # 16:10 UTC (17:10 España)
+    - cron: '52 19 * * *'  # 16:06 UTC (17:06 España)
+    - cron: '55 19 * * *'  # 16:08 UTC (17:08 España)
+    - cron: '25 20 * * *' # 16:10 UTC (17:10 España)
 
 jobs:
   create-release:
@@ -29,24 +29,24 @@ jobs:
         echo "latest_tag=${latest_tag}" >> $GITHUB_ENV
         echo "Latest tag found: $latest_tag"
 
-    - name: Get number of commits since last tag
+    - name: Get number of commits in develop since last tag
       id: commits_since_tag
       run: |
         latest_tag="${{ env.latest_tag }}"
         if [ -z "$latest_tag" ]; then
           # No previous tag, assume entire history
-          commit_count=$(git rev-list --count HEAD)
+          commit_count=$(git rev-list --count origin/develop)
         else
-          # Count commits since the latest tag
-          commit_count=$(git rev-list --count ${latest_tag}..HEAD)
+          # Count commits in develop since the latest tag
+          commit_count=$(git rev-list --count ${latest_tag}..origin/develop)
         fi
         echo "commit_count=${commit_count}" >> $GITHUB_ENV
-        echo "Number of commits since last tag: $commit_count"
+        echo "Number of commits in develop since last tag: $commit_count"
 
     - name: Skip if no commits since last tag
       if: env.commit_count == '0'
       run: |
-        echo "No commits since the last tag. Skipping tag creation."
+        echo "No commits in develop since the last tag. Skipping tag creation."
         exit 0  # Exit early to skip the rest of the steps if no commits
 
     - name: Determine the next version
@@ -91,7 +91,7 @@ jobs:
             git tag ${{ env.new_version }}
             git push origin ${{ env.new_version }}
           else
-            echo "No commits since last tag. Skipping tag creation."
+            echo "No commits in develop since last tag. Skipping tag creation."
           fi
         fi
 
@@ -117,14 +117,14 @@ jobs:
     - name: Check if there are commits to release
       id: check_commits
       run: |
-        # Check if there are commits between develop and main
+        # Check if there are commits in develop since the latest tag
         commit_count=$(git rev-list --count origin/main..origin/develop)
         echo "commits_between_main_and_develop=$commit_count" >> $GITHUB_ENV
         if [[ "$commit_count" -eq 0 ]]; then
-          echo "No commits between develop and main. Skipping pull request creation."
+          echo "No commits in develop since the latest tag. Skipping pull request creation."
           exit 0  # Exit early if no commits found
         fi
-        echo "Commits found between develop and main: $commit_count"
+        echo "Commits found in develop: $commit_count"
 
     - name: Get Current Date
       id: get_date
