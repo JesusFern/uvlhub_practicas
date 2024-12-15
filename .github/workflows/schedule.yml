@@ -2,7 +2,7 @@ name: Scheduled Release with PR
 
 on:
   schedule:
-    - cron: '40 15 * * *'
+    - cron: '44 15 * * *'
 
 jobs:
   create-release:
