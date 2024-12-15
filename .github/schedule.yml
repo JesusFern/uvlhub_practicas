@@ -1,0 +1,121 @@
+name: Scheduled Release with PR
+
+on:
+  schedule:
+    - cron: '31 15 * * *'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Fetch all tags from remote
+      run: |
+        git fetch --tags
+
+    - name: Get the latest tag (if exists)
+      id: get_latest_tag
+      run: |
+        latest_tag=$(git tag --list | sort -V | tail -n 1)
+        echo "latest_tag=${latest_tag}" >> $GITHUB_ENV
+        echo "Latest tag found: $latest_tag"
+
+    - name: Get number of commits since last tag
+      id: commits_since_tag
+      run: |
+        latest_tag="${{ env.latest_tag }}"
+        if [ -z "$latest_tag" ]; then
+          # No previous tag, assume entire history
+          commit_count=$(git rev-list --count HEAD)
+        else
+          # Count commits since the latest tag
+          commit_count=$(git rev-list --count ${latest_tag}..HEAD)
+        fi
+        echo "commit_count=${commit_count}" >> $GITHUB_ENV
+        echo "Number of commits since last tag: $commit_count"
+
+    - name: Determine the next version
+      id: determine_version
+      run: |
+        latest_version="${{ env.latest_tag }}"
+        commit_count="${{ env.commit_count }}"
+        
+        if [[ -z "$latest_version" ]] || [[ ! "$latest_version" =~ ^v?[0-9]+\.[0-9]+$ ]]; then
+          # If no valid previous tag exists, start at v1.0
+          new_version="v1.0"
+        else
+          # Extract major and minor versions from the latest tag
+          version="${latest_version#v}" # Remove the 'v' prefix if exists
+          major_version="${version%%.*}" # Extract major version
+          minor_version="${version#*.}" # Extract minor version
+
+          if [[ "$commit_count" -ge 10 ]]; then
+            # Increment major version
+            major_version=$((major_version + 1))
+            minor_version=0
+          else
+            # Increment minor version
+            minor_version=$((minor_version + 1))
+          fi
+
+          # Build the new version string
+          new_version="v${major_version}.${minor_version}"
+        fi
+
+        echo "new_version=${new_version}" >> $GITHUB_ENV
+        echo "New version calculated: $new_version"
+
+    - name: Check if the new tag already exists
+      id: check_new_tag
+      run: |
+        if git rev-parse "${{ env.new_version }}" >/dev/null 2>&1; then
+          echo "Tag ${{ env.new_version }} already exists."
+        else
+          echo "Tag ${{ env.new_version }} does not exist. Creating it now."
+          git tag ${{ env.new_version }}
+          git push origin ${{ env.new_version }}
+        fi
+
+  create-pull-request:
+    runs-on: ubuntu-latest
+    needs: create-release
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install GitHub CLI
+      run: |
+        sudo apt-get install gh
+
+    - name: Authenticate GitHub CLI
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+    - name: Check if there are commits to release
+      id: check_commits
+      run: |
+        commit_count="${{ env.commit_count }}"
+        if [[ "$commit_count" -eq 0 ]]; then
+          echo "No commits to release. Skipping pull request creation."
+          exit 0
+        fi
+        echo "Commits found: $commit_count"
+
+    - name: Get Current Date
+      id: get_date
+      run: |
+        current_date=$(date +'%d-%m-%Y')
+        echo "current_date=${current_date}" >> $GITHUB_ENV
+
+    - name: Create Pull Request from develop to main
+      if: steps.check_commits.outcome == 'success'
+      run: |
+        gh pr create \
+          --title "Release/${{ env.current_date }}" \
+          --body "This pull request prepares the release of a new version." \
+          --base main \
+          --head develop
