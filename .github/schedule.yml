@@ -1,8 +1,9 @@
-name: Scheduled Release with PR
+name: Release on Push to Develop
 
 on:
-  schedule:
-    - cron: '33 15 * * *'
+  push:
+    branches:
+      - develop
 
 jobs:
   create-release:
