@@ -2,11 +2,9 @@ name: Release on Push to Develop
 
 on:
   schedule:
-    - cron: '8 16 * * *'  # 16:06 UTC (17:06 España)
-    - cron: '12 16 * * *'  # 16:08 UTC (17:08 España)
-    - cron: '16 16 * * *' # 16:10 UTC (17:10 España)
-
-
+    - cron: '40 16 * * *'  # 16:06 UTC (17:06 España)
+    - cron: '45 16 * * *'  # 16:08 UTC (17:08 España)
+    - cron: '30 17 * * *' # 16:10 UTC (17:10 España)
 
 jobs:
   create-release:
@@ -15,10 +13,14 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Clonar todo el historial para todas las ramas
+
+    - name: Fetch all branches
+      run: git fetch origin main develop
 
     - name: Fetch all tags from remote
-      run: |
-        git fetch --tags
+      run: git fetch --tags
 
     - name: Get the latest tag (if exists)
       id: get_latest_tag
@@ -96,14 +98,17 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Fetch all branches
+      run: git fetch origin main develop
 
     - name: Install GitHub CLI
-      run: |
-        sudo apt-get install gh
+      run: sudo apt-get install gh
 
     - name: Authenticate GitHub CLI
-      run: |
-        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
     - name: Check if there are commits to release
       id: check_commits
