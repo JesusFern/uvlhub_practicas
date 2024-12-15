@@ -1,8 +1,12 @@
-name: Scheduled Release with PR
+name: Release on Push to Develop
 
 on:
   schedule:
-    - cron: '48 15 * * *'
+    - cron: '8 16 * * *'  # 16:06 UTC (17:06 España)
+    - cron: '12 16 * * *'  # 16:08 UTC (17:08 España)
+    - cron: '16 16 * * *' # 16:10 UTC (17:10 España)
+
+
 
 jobs:
   create-release:
@@ -36,6 +40,12 @@ jobs:
         fi
         echo "commit_count=${commit_count}" >> $GITHUB_ENV
         echo "Number of commits since last tag: $commit_count"
+
+    - name: Skip if no commits since last tag
+      if: env.commit_count == '0'
+      run: |
+        echo "No commits since the last tag. Skipping tag creation."
+        exit 0
 
     - name: Determine the next version
       id: determine_version
@@ -98,12 +108,14 @@ jobs:
     - name: Check if there are commits to release
       id: check_commits
       run: |
-        commit_count="${{ env.commit_count }}"
+        # Check if there are commits between develop and main
+        commit_count=$(git rev-list --count origin/main..origin/develop)
+        echo "commits_between_main_and_develop=$commit_count" >> $GITHUB_ENV
         if [[ "$commit_count" -eq 0 ]]; then
-          echo "No commits to release. Skipping pull request creation."
+          echo "No commits between develop and main. Skipping pull request creation."
           exit 0
         fi
-        echo "Commits found: $commit_count"
+        echo "Commits found between develop and main: $commit_count"
 
     - name: Get Current Date
       id: get_date
@@ -112,7 +124,7 @@ jobs:
         echo "current_date=${current_date}" >> $GITHUB_ENV
 
     - name: Create Pull Request from develop to main
-      if: steps.check_commits.outcome == 'success'
+      if: env.commits_between_main_and_develop != '0'
       run: |
         gh pr create \
           --title "Release/${{ env.current_date }}" \
