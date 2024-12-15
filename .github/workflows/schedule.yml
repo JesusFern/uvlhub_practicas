@@ -2,9 +2,9 @@ name: Release on Push to Develop
 
 on:
   schedule:
-    - cron: '40 16 * * *'  # 16:06 UTC (17:06 España)
-    - cron: '45 16 * * *'  # 16:08 UTC (17:08 España)
-    - cron: '30 17 * * *' # 16:10 UTC (17:10 España)
+    - cron: '18 18 * * *'  # 16:06 UTC (17:06 España)
+    - cron: '22 18 * * *'  # 16:08 UTC (17:08 España)
+    - cron: '30 19 * * *' # 16:10 UTC (17:10 España)
 
 jobs:
   create-release:
@@ -47,7 +47,7 @@ jobs:
       if: env.commit_count == '0'
       run: |
         echo "No commits since the last tag. Skipping tag creation."
-        exit 0
+        exit 0  # Exit early to skip the rest of the steps if no commits
 
     - name: Determine the next version
       id: determine_version
@@ -86,9 +86,13 @@ jobs:
         if git rev-parse "${{ env.new_version }}" >/dev/null 2>&1; then
           echo "Tag ${{ env.new_version }} already exists."
         else
-          echo "Tag ${{ env.new_version }} does not exist. Creating it now."
-          git tag ${{ env.new_version }}
-          git push origin ${{ env.new_version }}
+          if [ "${{ env.commit_count }}" -gt 0 ]; then
+            echo "Tag ${{ env.new_version }} does not exist. Creating it now."
+            git tag ${{ env.new_version }}
+            git push origin ${{ env.new_version }}
+          else
+            echo "No commits since last tag. Skipping tag creation."
+          fi
         fi
 
   create-pull-request:
@@ -118,7 +122,7 @@ jobs:
         echo "commits_between_main_and_develop=$commit_count" >> $GITHUB_ENV
         if [[ "$commit_count" -eq 0 ]]; then
           echo "No commits between develop and main. Skipping pull request creation."
-          exit 0
+          exit 0  # Exit early if no commits found
         fi
         echo "Commits found between develop and main: $commit_count"
 
